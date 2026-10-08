@@ -33,7 +33,7 @@ python3 -m http.server 8080   # y abre http://localhost:8080/?src=qr
    - `metaPixelId`: el pixel de Meta, si lo usan.
    - `evento`: etiqueta de origen. Por defecto es `synergy-unlimited-2026`.
 3. **`aviso-privacidad.html`**: poner el aviso real (LFPDPPP). Es obligatorio porque se piden datos personales.
-4. **QR del evento**: los flyers apuntan a `https://businesscreator.net`. Para medir el QR por separado, el QR puede llevar `?src=qr` o `?utm_source=synergy`. Con eso la página muestra el saludo «Escaneaste el QR en Synergy Unlimited».
+4. **QR del evento**: los flyers apuntan a `https://businesscreator.net`. Para medir el QR por separado, el QR puede llevar `?src=qr` o `?utm_source=synergy` y se guarda en `origen`.
 
 ## Contrato de datos
 
@@ -42,7 +42,7 @@ python3 -m http.server 8080   # y abre http://localhost:8080/?src=qr
 ```json
 {
   "tipo": "preregistro",
-  "version": "preregistro-v1",
+  "version": "preregistro-v2",
   "creado_en": "2026-10-08T02:47:20.379Z",
   "nombre": "Femi Prueba",
   "email": "femi@ejemplo.com",
@@ -55,8 +55,7 @@ python3 -m http.server 8080   # y abre http://localhost:8080/?src=qr
     "digital": "nunca",
     "freno": "como-vender",
     "inicio": "ya",
-    "inversion": "si",
-    "quiere_vender": "Un curso para dueños de cafeterías"
+    "inversion": "si"
   },
   "respuestas_texto": { "giro": "Doy un servicio (agencia, diseño, construcción, salud…)", "...": "..." },
   "puntaje": 16,
@@ -75,7 +74,6 @@ python3 -m http.server 8080   # y abre http://localhost:8080/?src=qr
 ```
 
 - `respuestas` trae llaves cortas para filtrar en el CRM. `respuestas_texto` trae el texto legible de cada respuesta.
-- `quiere_vender` es texto libre y puede venir vacío porque es opcional.
 - Si el endpoint falla, **el usuario no se entera**: el payload se guarda en `localStorage` y se reintenta en su siguiente visita, marcado con `"reintento": true`.
 
 ### Valores posibles

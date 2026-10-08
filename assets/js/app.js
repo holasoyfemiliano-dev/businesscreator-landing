@@ -9,7 +9,7 @@
   'use strict';
 
   var CFG = window.BC_CONFIG || {};
-  var VERSION = 'preregistro-v1';
+  var VERSION = 'preregistro-v2';
   var LS_AVANCE = 'bc_avance';
   var LS_PENDIENTE = 'bc_pendiente';
 
@@ -118,15 +118,14 @@
   /* ---------------- Estado ---------------- */
   var params = new URLSearchParams(location.search);
   var estado = {
-    paso: 0,                 // 0..N-1 preguntas, N = texto libre, N+1 = contacto, N+2 = resultado
+    paso: 0,                 // 0..N-1 preguntas, N = contacto, N+1 = resultado
     respuestas: {},
-    texto: '',
     inicioQuiz: null,
     pasosVistos: 0,
     sessionId: uid()
   };
   var N = PREGUNTAS.length;
-  var PASO_TEXTO = N, PASO_CONTACTO = N + 1, PASO_RESULTADO = N + 2;
+  var PASO_CONTACTO = N, PASO_RESULTADO = N + 1;
 
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var dlg = $('#quiz'), body = $('#quizBody'), barra = $('#barra'), progreso = $('.progreso'), atras = $('#atras'), pasoTxt = $('#pasoTxt');
@@ -192,13 +191,12 @@
     actualizarProgreso();
     var html;
     if (estado.paso < N) html = vistaPregunta(PREGUNTAS[estado.paso]);
-    else if (estado.paso === PASO_TEXTO) html = vistaTexto();
     else if (estado.paso === PASO_CONTACTO) html = vistaContacto();
     else html = vistaResultado();
     body.innerHTML = '<div class="paso-anim">' + html + '</div>';
     enlazar();
     estado.pasosVistos = Math.max(estado.pasosVistos, estado.paso + 1);
-    guardar(LS_AVANCE, { paso: Math.min(estado.paso, PASO_CONTACTO), respuestas: estado.respuestas, texto: estado.texto });
+    guardar(LS_AVANCE, { paso: Math.min(estado.paso, PASO_CONTACTO), respuestas: estado.respuestas });
     var foco = body.querySelector('[data-foco]') || body.querySelector('h2');
     if (foco) foco.focus({ preventScroll: true });
   }
@@ -215,15 +213,6 @@
       '<div class="opciones" role="group" aria-labelledby="quizTitulo">' + ops + '</div>';
   }
 
-  function vistaTexto() {
-    return '<p class="q-num">Casi listo</p>' +
-      '<h2 class="q-titulo" id="quizTitulo" tabindex="-1">¿Qué te gustaría vender en digital?</h2>' +
-      '<p class="q-ayuda">En tus palabras. Una idea basta.</p>' +
-      '<div class="campos"><div class="campo"><label for="fTexto" class="sr">Tu idea</label>' +
-      '<textarea id="fTexto" maxlength="500" placeholder="Ej. Un curso para que dueños de cafeterías aprendan a controlar sus costos" data-foco>' + esc(estado.texto) + '</textarea></div></div>' +
-      '<div class="q-acciones"><button type="button" class="btn btn-acc btn-block" id="sigTexto">Siguiente <span aria-hidden="true">→</span></button>' +
-      '<button type="button" class="saltar" id="saltarTexto">Prefiero no contestar</button></div>';
-  }
 
   function vistaContacto() {
     var ladas = LADAS.map(function (l) { return '<option value="' + l[0] + '">' + l[1] + '</option>'; }).join('');
@@ -264,9 +253,7 @@
     body.querySelectorAll('.opcion').forEach(function (b) {
       b.addEventListener('click', function () { elegir(b.getAttribute('data-v'), b); });
     });
-    var sig = $('#sigTexto'), salt = $('#saltarTexto'), form = $('#fContacto'), wa = $('#btnWa');
-    if (sig) sig.addEventListener('click', function () { estado.texto = $('#fTexto').value.trim(); ir(PASO_CONTACTO); });
-    if (salt) salt.addEventListener('click', function () { estado.texto = ''; ir(PASO_CONTACTO); });
+    var form = $('#fContacto'), wa = $('#btnWa');
     if (form) form.addEventListener('submit', enviar);
     if (wa) wa.addEventListener('click', function () { evento('bc_click_whatsapp'); });
     var comp = $('#btnCompartir'), listo = $('#btnListo');
@@ -319,7 +306,7 @@
       email: email.value.trim().toLowerCase(),
       whatsapp: lada + digitos,
       lada: lada,
-      respuestas: Object.assign({}, estado.respuestas, { quiere_vender: estado.texto }),
+      respuestas: Object.assign({}, estado.respuestas),
       respuestas_texto: textoRespuestas(),
       puntaje: c.puntaje,
       puntaje_max: c.puntaje_max,
@@ -352,7 +339,6 @@
       var op = p.opciones.filter(function (o) { return o.v === estado.respuestas[p.id]; })[0];
       out[p.id] = op ? op.t : '';
     });
-    out.quiere_vender = estado.texto;
     return out;
   }
 
@@ -385,7 +371,7 @@
   function abrir() {
     var av = leer(LS_AVANCE);
     if (av && av.paso && estado.paso === 0) {
-      estado.paso = av.paso; estado.respuestas = av.respuestas || {}; estado.texto = av.texto || '';
+      estado.paso = av.paso; estado.respuestas = av.respuestas || {};
     }
     if (!estado.inicioQuiz) estado.inicioQuiz = new Date();
     if (estado.paso >= PASO_RESULTADO) { estado.paso = PASO_RESULTADO; }
@@ -408,17 +394,13 @@
 
   // Atajos de teclado: A–E para elegir opción
   dlg.addEventListener('keydown', function (e) {
-    if (estado.paso >= N || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if (estado.paso >= N || e.target.tagName === 'INPUT') return;
     var i = 'abcde'.indexOf(e.key.toLowerCase());
     var ops = body.querySelectorAll('.opcion');
     if (i > -1 && ops[i]) { e.preventDefault(); ops[i].click(); }
   });
 
   /* ---------------- Página ---------------- */
-  // Bienvenida si vienen del QR del evento (?src=qr o utm_source=synergy…)
-  var fuente = (params.get('src') || params.get('utm_source') || '').toLowerCase();
-  if (fuente === 'qr' || fuente.indexOf('synergy') > -1) $('#bienvenida').hidden = false;
-
   // CTA fija al pasar el hero
   var sticky = $('#stickyCta'), hero = $('.hero');
   window.addEventListener('scroll', function () {
