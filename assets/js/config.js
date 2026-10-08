@@ -10,7 +10,7 @@ window.BC_CONFIG = {
   evento: 'synergy-unlimited-2026',
 
   // Liga del grupo de WhatsApp de la lista de espera. Vacío = no se muestra el botón.
-  whatsappGrupo: '',
+  whatsappGrupo: 'https://chat.whatsapp.com/FPPXSqFVSVH1FuanfI2Yzl',
 
   // Aviso de privacidad (obligatorio en México al pedir datos personales).
   avisoPrivacidad: 'aviso-privacidad.html',
